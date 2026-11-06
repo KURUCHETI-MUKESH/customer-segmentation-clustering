@@ -1,275 +1,341 @@
-# 🛍️ Customer Segmentation using Unsupervised Machine Learning
+# Customer Segmentation using Unsupervised Machine Learning
 
-A complete, end-to-end unsupervised machine learning project that segments mall customers into actionable marketing groups using K-Means, DBSCAN, and Hierarchical (Agglomerative) Clustering — with the Elbow Method, Silhouette Score, and business-insight generation.
+A complete, end-to-end **unsupervised machine learning** project that segments mall customers
+into actionable marketing groups using **K-Means**, **DBSCAN**, and **Hierarchical
+(Agglomerative) Clustering** — with the Elbow Method, Silhouette Score, and business-insight
+generation.
 
 ![Python](https://img.shields.io/badge/Python-3.10%2B-blue)
 ![scikit-learn](https://img.shields.io/badge/scikit--learn-1.4-orange)
+![Streamlit](https://img.shields.io/badge/Streamlit-Dashboard-red)
 ![License](https://img.shields.io/badge/License-MIT-green)
-![Status](https://img.shields.io/badge/Status-Complete-brightgreen)
 
 ---
 
-## 📌 Table of Contents
+## Table of Contents
 
-- [Project Overview](#-project-overview)
-- [Dataset](#-dataset)
-- [Folder Structure](#-folder-structure)
-- [Installation](#-installation)
-- [Usage](#-usage)
-- [Methodology](#-methodology)
-- [Results](#-results)
-- [Business Insights](#-business-insights)
-- [Screenshots](#-screenshots)
-- [Tech Stack](#-tech-stack)
-- [Future Improvements](#-future-improvements)
-- [License](#-license)
-
----
-
-## 🎯 Project Overview
-
-Retail businesses collect basic customer attributes — age, income, spending habits — but
-rarely convert that raw data into a strategy. This project applies **unsupervised learning**
-to group ~200 mall customers into distinct behavioural segments **without any labeled data**,
-then translates each cluster into a concrete marketing action.
-
-**Why unsupervised learning?** There is no "correct" segment label to train against — the
-whole point is to *discover* natural groupings in customer behaviour. This makes clustering
-the right tool for the job, and a great demonstration of unsupervised ML for a minor project.
-
-**What this project demonstrates:**
-- A full, reproducible ML pipeline: raw data → cleaning → EDA → modeling → evaluation → insight.
-- Three different clustering algorithms trained and rigorously compared, not just one.
-- Data-driven model selection using the **Elbow Method** and **Silhouette Score**, rather than
-  an arbitrarily chosen number of clusters.
-- Translation of unsupervised model output into **plain-language business recommendations** —
-  the part most student projects skip.
+- [Project Overview](#project-overview)
+- [Dataset](#dataset)
+- [Features](#features)
+- [Project Structure](#project-structure)
+- [Tech Stack](#tech-stack)
+- [Installation](#installation)
+- [Run the Project](#run-the-project)
+- [Dashboard Guide](#dashboard-guide)
+- [Methodology](#methodology)
+- [Model Evaluation Results](#model-evaluation-results)
+- [Business Insights](#business-insights)
+- [Generated Outputs](#generated-outputs)
+- [Screenshots](#screenshots)
+- [Limitations](#limitations)
+- [Future Improvements](#future-improvements)
+- [License and Attribution](#license-and-attribution)
 
 ---
 
-## 📊 Dataset
+## Project Overview
 
-This project is built around the structure of the well-known **Mall Customer Segmentation
-Dataset**:
+Retail businesses can use customer attributes such as age, annual
+income, and spending score to understand different customer groups. This
+project applies **unsupervised machine learning** to group customers
+based on these characteristics and presents the results through an
+interactive analytics dashboard.
 
-- **Kaggle:** [Customer Segmentation Tutorial in Python](https://www.kaggle.com/datasets/vjchoudhary7/customer-segmentation-tutorial-in-python)
-- **Columns:** `CustomerID`, `Gender`, `Age`, `Annual Income (k$)`, `Spending Score (1-100)`
-- **Size:** 200 customer records
+The project compares: 1. **K-Means** 2. **DBSCAN** 3. **Hierarchical
+(Agglomerative) Clustering**
 
-> ⚠️ **Important note on the bundled data file:** `data/mall_customers.csv` in this repo is a
-> **synthetically generated dataset** built to statistically mirror the real Mall Customer
-> dataset's structure, value ranges, and cluster patterns (it even includes a few injected
-> missing values and duplicate rows so the preprocessing pipeline has real problems to solve).
-> It was generated this way because the original file requires a Kaggle account/API key to
-> download programmatically.
->
-> **To reproduce results on the original data:** download `Mall_Customers.csv` from the Kaggle
-> link above and replace `data/mall_customers.csv` with it (keeping the same column names). All
-> code in `src/` and `notebooks/project.ipynb` will work unchanged, since it references columns
-> by name, not by exact values.
+## Dataset
 
----
+The dataset contains: - `CustomerID` - `Gender` - `Age` -
+`Annual Income (k$)` - `Spending Score (1-100)`
 
-## 📁 Folder Structure
+The bundled `data/mall_customers.csv` is a **synthetically generated
+dataset** designed to resemble the structure and value ranges of the
+Mall Customer Segmentation dataset. It contains approximately 200
+records. It is not actual mall transaction or customer data.
 
-```
-project/
+For experiments with the original dataset, download it from [Kaggle --
+Customer Segmentation Tutorial in
+Python](https://www.kaggle.com/datasets/vjchoudhary7/customer-segmentation-tutorial-in-python)
+and replace `data/mall_customers.csv`, keeping the same column names.
+
+## Features
+
+### Machine Learning
+
+- Data quality checks, missing-value handling, and duplicate removal.
+- Categorical encoding and feature scaling.
+- K-Means, DBSCAN, and Hierarchical clustering.
+- Evaluation using Silhouette Score, Davies-Bouldin Index, and
+  Calinski-Harabasz Score.
+- Cluster summaries, charts, and business-insight generation.
+
+### Interactive Streamlit Dashboard
+
+- Select K-Means, DBSCAN, or Hierarchical clustering.
+- Filter customers by gender, age, annual income, and spending score.
+- Search by Customer ID and view individual customer details.
+- View customer distribution and interactive cluster visualizations.
+- Compare average age, income, and spending across clusters.
+- Review customer segment descriptions and recommendations.
+- Download filtered customer data as CSV.
+- Download a text business report based on the current selection and
+  filters.
+
+## Project Structure
+
+```text
+customer-segmentation-clustering/
+├── dashboard/
+│   └── app.py                         # Interactive Streamlit dashboard
 ├── data/
-│   ├── mall_customers.csv              # Raw input dataset
-│   ├── mall_customers_clean.csv        # After preprocessing (generated)
-│   └── mall_customers_clustered.csv    # Final output with cluster labels (generated)
+│   ├── mall_customers.csv             # Raw input dataset
+│   ├── mall_customers_clean.csv       # Cleaned dataset (generated)
+│   └── mall_customers_clustered.csv   # Clustered dataset (generated)
 ├── notebooks/
-│   └── project.ipynb                   # Full walkthrough notebook (EDA -> models -> insights)
+│   └── project.ipynb                  # Project walkthrough notebook
 ├── src/
-│   ├── preprocessing.py                # Cleaning, encoding, scaling pipeline
-│   ├── train.py                        # K-Means / DBSCAN / Hierarchical training + elbow/silhouette
-│   ├── evaluate.py                     # Metric comparison, plots, business-insight generation
-│   └── utils.py                        # Shared paths, logging, plot-saving helpers
+│   ├── preprocessing.py               # Cleaning and preprocessing
+│   ├── train.py                       # Clustering model training
+│   ├── evaluate.py                    # Evaluation, summaries, and insights
+│   └── utils.py                       # Shared paths and helper functions
 ├── reports/
-│   └── project_report.md               # Detailed written report (methodology, results, insights)
-├── images/                              # All generated charts (EDA, elbow, cluster scatter plots, dendrogram)
+│   ├── project_report.md
+│   ├── algorithm_comparison.csv       # Generated evaluation results
+│   ├── customer_segment_summary.csv   # Generated cluster summary
+│   └── business_insights.csv          # Generated business insights
+├── images/                            # Generated charts
 ├── requirements.txt
 ├── README.md
 ├── LICENSE
 └── .gitignore
 ```
 
----
+## Tech Stack
 
-## ⚙️ Installation
+- **Language:** Python 3.10+
+- **Data processing:** pandas, NumPy
+- **Machine learning:** scikit-learn
+- **Visualization:** Matplotlib, Seaborn, Plotly
+- **Dashboard:** Streamlit
+- **Notebook:** Jupyter
+- **Version control:** Git and GitHub
+
+## Installation
+
+### 1. Clone the repository
 
 ```bash
 # 1. Clone the repository
-git clone https://github.com/KURUCHETI-MUKESH/customer-segmentation-clustering.git
+git clone https://github.com/KURUCHEI-MUKESH/customer-segmentation-clustering.git
 cd customer-segmentation-clustering
+```
 
-# 2. (Recommended) create a virtual environment
+### 2. Create and activate a virtual environment
+
+**Windows PowerShell:**
+
+```powershell
 python -m venv venv
-source venv/bin/activate        # On Windows: venv\Scripts\activate
+.\venv\Scripts\Activate.ps1
+```
 
-# 3. Install dependencies
+**macOS / Linux:**
+
+```bash
+python -m venv venv
+source venv/bin/activate
+```
+
+### 3. Install dependencies
+
+```bash
 pip install -r requirements.txt
 ```
 
----
+If Streamlit and Plotly are not already listed in `requirements.txt`,
+install them and add both package names to that file:
 
-## 🚀 Usage
+```bash
+pip install streamlit plotly
+```
 
-### Option A — Run the notebook (recommended for exploring the project)
+## Run the Project
+
+Run commands from the project root directory.
+
+### Option A: Run the machine learning pipeline
+
+```bash
+python src/preprocessing.py
+python src/train.py
+python src/evaluate.py
+```
+
+Run these scripts in order: training uses the cleaned data, and
+evaluation uses the clustered output.
+
+### Option B: Launch the dashboard
+
+After generating the cleaned and clustered data and evaluation reports:
+
+```bash
+streamlit run dashboard/app.py
+```
+
+Open the local URL printed by Streamlit, usually
+`http://localhost:8501`.
+
+### Option C: Explore the notebook
 
 ```bash
 jupyter notebook notebooks/project.ipynb
 ```
 
-The notebook walks through every step — loading, cleaning, EDA, elbow/silhouette analysis,
-all three clustering models, evaluation, and business insights — with all plots rendered
-inline.
+## Dashboard Guide
 
-### Option B — Run the modular pipeline from the command line
+1.  **Algorithm selection:** Choose K-Means, DBSCAN, or Hierarchical
+    clustering. The dashboard uses the corresponding cluster-label
+    column.
+2.  **Customer filters:** Filter by gender, age range, annual income
+    range, and spending score. Metrics, charts, summaries, and downloads
+    reflect the selected filters.
+3.  **Customer search:** Select a Customer ID to view age, gender,
+    annual income, spending score, and cluster assignment. Search
+    results are limited to the currently filtered data.
+4.  **Visual analysis:** Explore customer distribution,
+    income-versus-spending clusters, and average age, income, and
+    spending by cluster.
+5.  **Insights and downloads:** Review segment descriptions and
+    recommendations. Download filtered customer data as CSV or generate
+    a text business report for the current selection.
 
-```bash
-# Step 1: Clean the raw data -> data/mall_customers_clean.csv
-python src/preprocessing.py
+## Methodology
 
-# Step 2: Train K-Means, DBSCAN & Hierarchical models, run elbow/silhouette analysis
-#          -> data/mall_customers_clustered.csv, images/elbow_and_silhouette.png
-python src/train.py
+1.  **Preprocessing:** Check data quality, handle missing values, remove
+    duplicates, encode categorical data, and scale numerical features.
+2.  **Exploratory analysis:** Review distributions and relationships
+    among customer attributes.
+3.  **Clustering:** Train K-Means, DBSCAN, and Agglomerative clustering
+    models.
+4.  **Evaluation:** Compare clustering quality using Silhouette Score,
+    Davies-Bouldin Index, and Calinski-Harabasz Score.
+5.  **Interpretation:** Summarize cluster characteristics and create
+    rule-based business recommendations.
+6.  **Dashboarding:** Present model outputs in an interactive Streamlit
+    application.
 
-# Step 3: Evaluate & compare all 3 algorithms, generate cluster plots + insights
-python src/evaluate.py
+## Model Evaluation Results
+
+The evaluation output shared for the bundled dataset was:
+
+---
+
+Algorithm Clusters Silhouette Davies-Bouldin Calinski-Harabasz
+Score Index Score
+
+---
+
+K-Means 5 0.4564 0.8265 232.8590
+
+DBSCAN 3 0.4323 0.7669 157.9825
+
+Hierarchical 5 0.4396 0.8630 221.7038
+
+---
+
+A higher Silhouette Score and Calinski-Harabasz Score are generally
+preferred; a lower Davies-Bouldin Index is generally preferred. K-Means
+has the highest Silhouette and Calinski-Harabasz scores in these
+results, while DBSCAN has the lowest Davies-Bouldin Index. No single
+algorithm leads on all three metrics. Results can vary with the dataset,
+preprocessing, and model parameters.
+
+## Business Insights
+
+The project translates cluster averages into understandable customer
+profiles, such as: - Premium or high-value customers. - High-income
+customers with lower spending scores. - Budget-conscious customers with
+higher spending scores. - Lower-engagement customers. - Average
+customers.
+
+**Important:** Segment labels and recommendations are rule-based
+interpretations, not labels learned by the clustering algorithms. The
+interactive dashboard compares cluster averages with the median income
+and spending score of the currently filtered customer data. Segment
+names can therefore change when filters or the selected algorithm
+change. Recommendations are exploratory ideas, not proven marketing
+outcomes.
+
+## Generated Outputs
+
+Depending on which scripts and dashboard actions are run, outputs
+include: - `data/mall_customers_clean.csv` -
+`data/mall_customers_clustered.csv` -
+`reports/algorithm_comparison.csv` -
+`reports/customer_segment_summary.csv` -
+`reports/business_insights.csv` - Generated charts under `images/` -
+Customer CSV and business report downloaded from the dashboard
+
+## Screenshots
+
+Add screenshots of your running dashboard to this section before
+publishing the repository. Suggested screenshots: 1. Dashboard overview
+with sidebar filters. 2. Customer distribution and cluster
+visualization. 3. Customer profile analysis charts. 4. Customer segment
+insights and recommendations. 5. Customer search and download controls.
+
+After saving screenshots in the repository, add links using their actual
+paths. For example:
+
+```markdown
+![Dashboard overview](images/dashboard_overview.png)
 ```
 
-Each script can also be imported as a module, e.g.:
+## Limitations
 
-```python
-from src.preprocessing import run_preprocessing_pipeline
-from src.train import run_training_pipeline
-from src.evaluate import compare_algorithms, generate_business_insights
+- The bundled data is synthetic and must not be presented as real
+  customer data.
+- The dataset contains basic customer attributes, not actual purchase
+  histories or campaign outcomes.
+- Business recommendations are heuristic interpretations and have not
+  been validated through real marketing experiments.
+- Clustering results depend on selected features, scaling, model
+  parameters, and input data.
 
-df = run_training_pipeline(optimal_k=5)
-```
+## Future Improvements
 
----
+- Add PCA-based dimensionality reduction for additional cluster
+  visualization.
+- Evaluate models on a larger real-world customer dataset where
+  permitted.
+- Add model parameter controls and more detailed cluster validation.
+- Save and load trained models for repeatable predictions on new
+  customer records.
+- Track segment changes over time when longitudinal data becomes
+  available.
+- Validate marketing recommendations using real campaign results or
+  controlled experiments.
 
-## 🔬 Methodology
+## Author
 
-1. **Preprocessing** — median imputation for missing values, duplicate removal, label
-   encoding for `Gender`, and `StandardScaler` normalization for `Age`, `Annual Income (k$)`,
-   and `Spending Score (1-100)`.
-2. **EDA** — distribution plots, gender breakdown, correlation heatmap, and pairwise
-   scatter plots to understand feature relationships before modeling.
-3. **Optimal cluster count** — computed inertia and silhouette score for `k = 2` to `10`
-   using K-Means; selected **k = 5** based on the elbow bend and the silhouette peak.
-4. **Modeling** — trained three algorithms on the scaled features:
-   - **K-Means** (`k=5`, `k-means++` init)
-   - **DBSCAN** (`eps=0.6`, `min_samples=5`)
-   - **Agglomerative / Hierarchical Clustering** (`n_clusters=5`, Ward linkage)
-5. **Evaluation** — compared all three using **Silhouette Score** (higher = better
-   separated) and **Davies-Bouldin Index** (lower = more compact/separated clusters).
-6. **Business translation** — grouped cluster centroids by average income/spending
-   behaviour into 5 human-readable customer personas with recommended marketing actions.
+**Kurucheti Mukesh**\
+B.Tech -- Artificial Intelligence and Data Science
 
----
+- **LinkedIn:**
+  [linkedin.com/in/kuruchetimukesh](https://linkedin.com/in/kuruchetimukesh)
+- **GitHub:** Add your GitHub profile URL here.
 
-## 📈 Results
+This version includes additional work by Kurucheti Mukesh, including the
+interactive Streamlit dashboard, customer filters and search, profile
+visualizations, segment insights, and downloadable reports.
 
-| Algorithm | Clusters Found | Silhouette Score ↑ | Davies-Bouldin Index ↓ |
-|---|---|---|---|
-| **K-Means** | 5 | **0.456** | 0.827 |
-| DBSCAN | 3 (+ noise) | 0.432 | **0.767** |
-| Hierarchical | 5 | 0.440 | 0.863 |
+## License and Original Project Attribution
 
-**K-Means was selected as the final model** — it produced the best silhouette score, assigns
-*every* customer to a segment (unlike DBSCAN, which leaves outliers unclustered), and its
-segments align closely with intuitive, actionable customer personas.
+This project is based on the original customer segmentation project by
+**Shubh**. The original project's MIT license and attribution are
+retained. See [`LICENSE`](LICENSE) for the full license text.
 
-> Exact numbers will vary slightly depending on the dataset used (synthetic vs. original
-> Kaggle file) and random seed, but the qualitative pattern — K-Means and Hierarchical
-> converging on ~5 well-separated segments, with DBSCAN better suited to outlier detection —
-> is consistent.
-
----
-
-## 💡 Business Insights
-
-| Segment | Profile | Recommended Action |
-|---|---|---|
-| **Premium / High-Value Customers** | Moderate–high income, high spending score | Loyalty programs, premium product launches |
-| **High Income, Cautious Spenders** | High income, low spending score | Personalized, trust-building offers — largest untapped revenue |
-| **Budget-Conscious Big Spenders** | Lower income, high spending score, younger | Installment plans, value bundles |
-| **Low Engagement Customers** | Low income, low spending score, older | Discount-led re-engagement / win-back campaigns |
-| **Standard / Average Customers** | Mid income, mid spending score | Steady seasonal promotions |
-
-Full statistics per cluster (average age, income, spending score, and customer count) are
-generated automatically by `src/evaluate.py` and walked through in `notebooks/project.ipynb`.
-See `reports/project_report.md` for the full write-up.
-
----
-
-## 🖼️ Screenshots
-
-**Elbow Method & Silhouette Score — choosing k**
-
-![Elbow and Silhouette](images/elbow_and_silhouette.png)
-
-**Final Customer Segments — K-Means (k=5)**
-
-![K-Means Clusters](images/kmeans_clusters.png)
-
-**Hierarchical Clustering Dendrogram**
-
-![Dendrogram](images/dendrogram.png)
-
-**Algorithm Comparison — DBSCAN vs. Hierarchical**
-
-<table>
-<tr>
-<td><img src="images/dbscan_clusters.png" alt="DBSCAN Clusters" /></td>
-<td><img src="images/hierarchical_clusters.png" alt="Hierarchical Clusters" /></td>
-</tr>
-</table>
-
-**Exploratory Data Analysis**
-
-![EDA Distributions](images/eda_distributions.png)
-![Correlation Heatmap](images/eda_correlation_heatmap.png)
-
-*(All charts above are generated automatically by the pipeline and saved into `images/`.)*
-
----
-
-## 🛠️ Tech Stack
-
-- **Language:** Python 3.10+
-- **Data handling:** pandas, numpy
-- **Visualization:** matplotlib, seaborn
-- **Machine Learning:** scikit-learn (`KMeans`, `DBSCAN`, `AgglomerativeClustering`,
-  `StandardScaler`, `silhouette_score`, `davies_bouldin_score`)
-- **Hierarchical tools:** scipy (`linkage`, `dendrogram`)
-- **Notebook:** Jupyter
-
----
-
-## 🔮 Future Improvements
-
-- Add **PCA** for 2D/3D visualization when more features are available.
-- Deploy the trained K-Means model behind a simple **Streamlit/Flask** dashboard for live
-  customer scoring.
-- Track **segment migration** over time as new transaction data arrives.
-- Experiment with **Gaussian Mixture Models** for soft/probabilistic cluster assignment.
-- A/B test the recommended marketing actions per segment against real campaign performance.
-
----
-
-## 📄 License
-
-This project is licensed under the [MIT License](LICENSE) — free to use, modify, and
-distribute with attribution.
-
----
-
-## 🙋 Author
-
-**Shubh** — College Minor Project (Unsupervised Machine Learning)
-
-If you found this project useful, consider ⭐ starring the repository!
+If you reuse or redistribute this project, keep the original license and
+attribution notices. The additions described above are contributions
+made in this version.
