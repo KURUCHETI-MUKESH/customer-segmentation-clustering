@@ -1,9 +1,6 @@
 # 🛍️ Customer Segmentation using Unsupervised Machine Learning
 
-A complete, end-to-end **unsupervised machine learning** project that segments mall customers
-into actionable marketing groups using **K-Means**, **DBSCAN**, and **Hierarchical
-(Agglomerative) Clustering** — with the Elbow Method, Silhouette Score, and business-insight
-generation.
+A complete, end-to-end unsupervised machine learning project that segments mall customers into actionable marketing groups using K-Means, DBSCAN, and Hierarchical (Agglomerative) Clustering — with the Elbow Method, Silhouette Score, and business-insight generation.
 
 ![Python](https://img.shields.io/badge/Python-3.10%2B-blue)
 ![scikit-learn](https://img.shields.io/badge/scikit--learn-1.4-orange)
@@ -103,7 +100,7 @@ project/
 
 ```bash
 # 1. Clone the repository
-git clone https://github.com/<KURUCHETI-MUKESH>/customer-segmentation-clustering.git
+git clone https://github.com/KURUCHETI-MUKESH/customer-segmentation-clustering.git
 cd customer-segmentation-clustering
 
 # 2. (Recommended) create a virtual environment
