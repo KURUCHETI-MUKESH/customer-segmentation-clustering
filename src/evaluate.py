@@ -1,183 +1,363 @@
-"""
-evaluate.py
------------
-Evaluates and compares the three clustering algorithms (K-Means,
-DBSCAN, Hierarchical) using internal validation metrics, and produces
-visualizations plus a plain-language business-insight summary for the
-final chosen segmentation.
 
-Run directly:
-    python src/evaluate.py
+"""
+Improved Customer Segmentation Model Evaluation
+
+New features:
+1. Silhouette Score
+2. Davies-Bouldin Index
+3. Calinski-Harabasz Score
+4. Algorithm comparison CSV
+5. Customer segment summary
+6. Business insights report
+7. Cluster visualization
 """
 
-import matplotlib.pyplot as plt
+import os
 import pandas as pd
+import matplotlib.pyplot as plt
 import seaborn as sns
-from sklearn.metrics import silhouette_score, davies_bouldin_score
+
+from sklearn.metrics import (
+    silhouette_score,
+    davies_bouldin_score,
+    calinski_harabasz_score
+)
 
 from preprocessing import FEATURE_COLUMNS, scale_features
-from utils import save_fig, get_logger
+
+from utils import (
+    CLUSTERED_DATA_PATH,
+    REPORTS_DIR,
+    get_logger,
+    save_fig,
+    ensure_dir
+)
 
 logger = get_logger(__name__)
 
 sns.set_style("whitegrid")
 
 
-def evaluate_clustering(scaled_df: pd.DataFrame, labels, name: str) -> dict:
-    """Compute Silhouette Score and Davies-Bouldin Index for a clustering result.
+def evaluate_clustering(
+    scaled_df,
+    labels,
+    name
+):
+    """Evaluate a clustering algorithm."""
 
-    Noise points (label == -1, produced by DBSCAN) are excluded from the
-    metric computation since they do not belong to any cluster.
+    labels = pd.Series(
+        labels,
+        index=scaled_df.index
+    )
 
-    Parameters
-    ----------
-    scaled_df : pd.DataFrame
-        Standardized feature matrix.
-    labels : array-like
-        Cluster labels produced by the model.
-    name : str
-        Name of the algorithm, used for logging.
-
-    Returns
-    -------
-    dict
-        {'algorithm', 'n_clusters', 'silhouette', 'davies_bouldin'}
-    """
-    labels = pd.Series(labels, index=scaled_df.index)
+    # Remove DBSCAN noise points
     mask = labels != -1
-    n_clusters = labels[mask].nunique()
 
-    if n_clusters < 2:
-        logger.warning("%s produced fewer than 2 valid clusters; metrics skipped.", name)
-        return {"algorithm": name, "n_clusters": n_clusters,
-                "silhouette": None, "davies_bouldin": None}
+    X = scaled_df.loc[mask]
+    valid_labels = labels.loc[mask]
 
-    sil = silhouette_score(scaled_df[mask], labels[mask])
-    dbi = davies_bouldin_score(scaled_df[mask], labels[mask])
-    logger.info("%s | clusters=%d | silhouette=%.4f | davies_bouldin=%.4f",
-                name, n_clusters, sil, dbi)
-    return {"algorithm": name, "n_clusters": n_clusters,
-            "silhouette": sil, "davies_bouldin": dbi}
+    n_clusters = valid_labels.nunique()
+
+    # Check whether metrics can be calculated
+    if (
+        n_clusters < 2
+        or n_clusters >= len(valid_labels)
+    ):
+
+        logger.warning(
+            "%s produced invalid cluster structure.",
+            name
+        )
+
+        return {
+            "Algorithm": name,
+            "Clusters": n_clusters,
+            "Silhouette Score": None,
+            "Davies-Bouldin Index": None,
+            "Calinski-Harabasz Score": None
+        }
+
+    # Calculate metrics
+    silhouette = silhouette_score(
+        X,
+        valid_labels
+    )
+
+    davies = davies_bouldin_score(
+        X,
+        valid_labels
+    )
+
+    calinski = calinski_harabasz_score(
+        X,
+        valid_labels
+    )
+
+    logger.info(
+        "%s evaluated successfully.",
+        name
+    )
+
+    return {
+        "Algorithm": name,
+        "Clusters": n_clusters,
+        "Silhouette Score": round(silhouette, 4),
+        "Davies-Bouldin Index": round(davies, 4),
+        "Calinski-Harabasz Score": round(calinski, 4)
+    }
 
 
-def compare_algorithms(df: pd.DataFrame) -> pd.DataFrame:
-    """Compare K-Means, DBSCAN, and Hierarchical clustering results.
+def compare_algorithms(df):
+    """Compare all three clustering algorithms."""
 
-    Parameters
-    ----------
-    df : pd.DataFrame
-        Clustered dataset containing 'KMeans_Cluster', 'DBSCAN_Cluster',
-        and 'Hierarchical_Cluster' columns.
+    scaled_df, _ = scale_features(
+        df,
+        FEATURE_COLUMNS
+    )
 
-    Returns
-    -------
-    pd.DataFrame
-        Comparison table with metrics for each algorithm.
-    """
-    scaled_df, _ = scale_features(df, FEATURE_COLUMNS)
-    rows = [
-        evaluate_clustering(scaled_df, df["KMeans_Cluster"], "K-Means"),
-        evaluate_clustering(scaled_df, df["DBSCAN_Cluster"], "DBSCAN"),
-        evaluate_clustering(scaled_df, df["Hierarchical_Cluster"], "Hierarchical"),
-    ]
-    comparison_df = pd.DataFrame(rows)
-    logger.info("\n%s", comparison_df.to_string(index=False))
+    algorithms = {
+        "K-Means": "KMeans_Cluster",
+        "DBSCAN": "DBSCAN_Cluster",
+        "Hierarchical": "Hierarchical_Cluster"
+    }
+
+    results = []
+
+    for name, column in algorithms.items():
+
+        if column not in df.columns:
+            logger.warning(
+                "Missing cluster column: %s",
+                column
+            )
+            continue
+
+        result = evaluate_clustering(
+            scaled_df,
+            df[column],
+            name
+        )
+
+        results.append(result)
+
+    comparison_df = pd.DataFrame(results)
+
+    ensure_dir(REPORTS_DIR)
+
+    report_path = os.path.join(
+        REPORTS_DIR,
+        "algorithm_comparison.csv"
+    )
+
+    comparison_df.to_csv(
+        report_path,
+        index=False
+    )
+
+    print("\nMODEL EVALUATION RESULTS")
+    print("========================")
+    print(comparison_df.to_string(index=False))
+
+    print("\nSaved:", report_path)
+
     return comparison_df
 
 
-def plot_cluster_scatter(df: pd.DataFrame, cluster_col: str, filename: str) -> None:
-    """Scatter plot of Annual Income vs Spending Score colored by cluster."""
-    fig, ax = plt.subplots(figsize=(7, 6))
-    palette = sns.color_palette("tab10", df[cluster_col].nunique())
+def plot_cluster_scatter(
+    df,
+    cluster_col,
+    filename
+):
+    """Visualize customer clusters."""
+
+    fig, ax = plt.subplots(figsize=(8, 6))
+
     sns.scatterplot(
-        data=df, x="Annual Income (k$)", y="Spending Score (1-100)",
-        hue=cluster_col, palette=palette, s=70, ax=ax
+        data=df,
+        x="Annual Income (k$)",
+        y="Spending Score (1-100)",
+        hue=cluster_col,
+        palette="tab10",
+        s=70,
+        ax=ax
     )
-    ax.set_title(f"Customer Segments — {cluster_col.replace('_', ' ')}")
-    ax.legend(title="Cluster", bbox_to_anchor=(1.02, 1), loc="upper left")
+
+    ax.set_title(
+        f"Customer Segmentation - {cluster_col}"
+    )
+
+    ax.legend(
+        title="Customer Cluster",
+        bbox_to_anchor=(1.02, 1),
+        loc="upper left"
+    )
+
     fig.tight_layout()
+
     save_fig(fig, filename)
-    logger.info("Saved %s", filename)
+
+    print("Chart saved:", filename)
 
 
-def summarize_clusters(df: pd.DataFrame, cluster_col: str = "KMeans_Cluster") -> pd.DataFrame:
-    """Produce per-cluster summary statistics used to derive business insights.
+def summarize_clusters(
+    df,
+    cluster_col="KMeans_Cluster"
+):
+    """Generate customer segment statistics."""
 
-    Parameters
-    ----------
-    df : pd.DataFrame
-    cluster_col : str
-        Which cluster label column to summarize by.
-
-    Returns
-    -------
-    pd.DataFrame
-        Mean Age, Income, Spending Score, and count per cluster.
-    """
     summary = df.groupby(cluster_col).agg(
-        Count=("CustomerID", "count"),
-        Avg_Age=("Age", "mean"),
-        Avg_Income=("Annual Income (k$)", "mean"),
-        Avg_Spending=("Spending Score (1-100)", "mean"),
-    ).round(1).reset_index()
+        Customer_Count=("CustomerID", "count"),
+        Average_Age=("Age", "mean"),
+        Average_Income=("Annual Income (k$)", "mean"),
+        Average_Spending=(
+            "Spending Score (1-100)",
+            "mean"
+        )
+    ).round(2).reset_index()
+
+    ensure_dir(REPORTS_DIR)
+
+    summary_path = os.path.join(
+        REPORTS_DIR,
+        "customer_segment_summary.csv"
+    )
+
+    summary.to_csv(
+        summary_path,
+        index=False
+    )
+
+    print("\nCUSTOMER SEGMENT SUMMARY")
+    print("========================")
+    print(summary.to_string(index=False))
+
+    print("\nSaved:", summary_path)
+
     return summary
 
 
-def generate_business_insights(summary: pd.DataFrame) -> list:
-    """Translate cluster statistics into plain-language business insights.
+def generate_business_insights(summary):
+    """Generate business recommendations."""
 
-    Parameters
-    ----------
-    summary : pd.DataFrame
-        Output of `summarize_clusters`.
-
-    Returns
-    -------
-    list of str
-        One insight sentence per cluster.
-    """
     insights = []
+
     for _, row in summary.iterrows():
-        cluster_id = int(row.iloc[0])
-        income, spend, age = row["Avg_Income"], row["Avg_Spending"], row["Avg_Age"]
 
-        if income >= 60 and spend >= 55:
-            label = "Premium / High-Value Customers"
-            action = "Target with loyalty programs and premium product launches."
-        elif income >= 60 and spend < 45:
-            label = "High Income, Cautious Spenders"
-            action = "Use personalized offers and trust-building campaigns to increase spend."
-        elif income < 45 and spend >= 55:
-            label = "Budget-Conscious Big Spenders"
-            action = "Offer installment plans and value bundles; high engagement potential."
-        elif income < 45 and spend < 45:
-            label = "Low Engagement Customers"
-            action = "Re-engagement campaigns, discounts, and win-back offers recommended."
+        income = row["Average_Income"]
+        spending = row["Average_Spending"]
+
+        if income >= 60 and spending >= 55:
+
+            segment = "Premium Customers"
+
+            action = (
+                "Offer loyalty rewards and premium products."
+            )
+
+        elif income >= 60 and spending < 45:
+
+            segment = "High Income, Low Spending"
+
+            action = (
+                "Use personalized promotions to encourage spending."
+            )
+
+        elif income < 45 and spending >= 55:
+
+            segment = "Budget Conscious Active Customers"
+
+            action = (
+                "Offer discounts and value-for-money bundles."
+            )
+
+        elif income < 45 and spending < 45:
+
+            segment = "Low Engagement Customers"
+
+            action = (
+                "Use targeted campaigns to improve engagement."
+            )
+
         else:
-            label = "Standard / Average Customers"
-            action = "Maintain steady engagement through seasonal promotions."
 
-        insights.append(
-            f"Cluster {cluster_id} — {label} (n={int(row['Count'])}, "
-            f"avg age={age}, avg income=${income}k, avg spending score={spend}): {action}"
-        )
-    return insights
+            segment = "Average Customers"
+
+            action = (
+                "Maintain engagement through seasonal offers."
+            )
+
+        insights.append({
+            "Cluster": int(row.iloc[0]),
+            "Customer Segment": segment,
+            "Recommendation": action
+        })
+
+    insights_df = pd.DataFrame(insights)
+
+    insights_path = os.path.join(
+        REPORTS_DIR,
+        "business_insights.csv"
+    )
+
+    insights_df.to_csv(
+        insights_path,
+        index=False
+    )
+
+    print("\nBUSINESS INSIGHTS")
+    print("=================")
+    print(insights_df.to_string(index=False))
+
+    print("\nSaved:", insights_path)
+
+    return insights_df
+
+
+def run_evaluation():
+
+    print("\nStarting model evaluation...")
+
+    # Load clustered dataset
+    df = pd.read_csv(CLUSTERED_DATA_PATH)
+
+    # Compare algorithms
+    comparison = compare_algorithms(df)
+
+    # Generate K-Means summary
+    summary = summarize_clusters(
+        df,
+        "KMeans_Cluster"
+    )
+
+    # Generate business insights
+    insights = generate_business_insights(
+        summary
+    )
+
+    # Generate visualizations
+    plot_cluster_scatter(
+        df,
+        "KMeans_Cluster",
+        "improved_kmeans_clusters.png"
+    )
+
+    plot_cluster_scatter(
+        df,
+        "DBSCAN_Cluster",
+        "improved_dbscan_clusters.png"
+    )
+
+    plot_cluster_scatter(
+        df,
+        "Hierarchical_Cluster",
+        "improved_hierarchical_clusters.png"
+    )
+
+    print("\nMODEL EVALUATION COMPLETED!")
+
+    return comparison, summary, insights
 
 
 if __name__ == "__main__":
-    from utils import CLUSTERED_DATA_PATH
 
-    clustered_df = pd.read_csv(CLUSTERED_DATA_PATH)
-
-    comparison = compare_algorithms(clustered_df)
-    print("\nAlgorithm comparison:\n", comparison)
-
-    plot_cluster_scatter(clustered_df, "KMeans_Cluster", "kmeans_clusters.png")
-    plot_cluster_scatter(clustered_df, "DBSCAN_Cluster", "dbscan_clusters.png")
-    plot_cluster_scatter(clustered_df, "Hierarchical_Cluster", "hierarchical_clusters.png")
-
-    cluster_summary = summarize_clusters(clustered_df, "KMeans_Cluster")
-    print("\nCluster summary:\n", cluster_summary)
-
-    for line in generate_business_insights(cluster_summary):
-        print("-", line)
+    run_evaluation()
