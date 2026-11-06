@@ -103,7 +103,7 @@ project/
 
 ```bash
 # 1. Clone the repository
-git clone https://github.com/<KURUCHETI_MUKESH>/customer-segmentation-clustering.git
+git clone https://github.com/<KURUCHETI-MUKESH>/customer-segmentation-clustering.git
 cd customer-segmentation-clustering
 
 # 2. (Recommended) create a virtual environment
